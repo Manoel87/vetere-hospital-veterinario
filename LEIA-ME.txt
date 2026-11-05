@@ -1,0 +1,18 @@
+SITE VETÈRE - ORGANIZAÇÃO DAS PASTAS
+
+html/  -> todas as páginas (index, sobre, especialidades, estrutura, equipe, planos, faq, contato)
+css/   -> style.css (visual de todo o site)
+js/    -> main.js (páginas internas) e home.js (página inicial)
+img/   -> imagens do site (troque pelas fotos reais da clínica)
+index.html (na raiz) só redireciona para html/index.html, necessário para hospedagem.
+
+COMO ABRIR (Windows): extraia o ZIP, abra a pasta no VS Code (Arquivo > Abrir Pasta) e dê dois cliques em html/index.html.
+
+O QUE TROCAR PARA CADA CLIENTE
+- Nome VETÈRE, textos e cores (cores: topo de css/style.css, em :root).
+- WhatsApp: js/main.js e js/home.js (WHATSAPP_NUMBER) e o rodapé de cada página.
+- Telefone, endereço, CNPJ, CRMV: rodapé (todas as páginas) e html/contato.html.
+- Equipe e formações (exemplos, troque pelas reais): html/equipe.html. Planos aceitos: html/planos.html. Dúvidas e pagamento: html/faq.html.
+- Domínio: troque SEUDOMINIO.com.br nas páginas, robots.txt e sitemap.xml.
+
+PUBLICAR: GitHub Pages, Netlify ou Vercel (envie a pasta inteira).
