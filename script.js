@@ -10,7 +10,7 @@
 
   $('#year').textContent = new Date().getFullYear();
   $('#waFloat').href = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' +
-    encodeURIComponent('🚨 Olá, VETÈRE! Preciso de atendimento de emergência para o meu pet.');
+    encodeURIComponent('Olá, VETÈRE! Preciso de atendimento de emergência para o meu pet.');
 
   /* Header sólido ao rolar */
   var header = $('.header');
@@ -147,14 +147,14 @@
         pet = (d.get('pet') || '').trim() || 'não informado',
         proto = nextProtocol();
     var lines = [
-      (urgent ? '🚨 *URGÊNCIA* – ' : '') + '*Solicitação de agendamento – VETÈRE*',
+      (urgent ? '*URGÊNCIA* – ' : '') + '*Solicitação de agendamento – VETÈRE*',
       '',
-      '🔖 Protocolo: *' + proto + '*',
-      '👤 Tutor: ' + nome,
-      '🐾 Pet: ' + pet,
-      '🐶🐱 Espécie: ' + d.get('especie'),
-      '🩺 Especialidade: ' + spec,
-      '🕐 Horário agendado: ' + hora + ' (' + d.get('turno') + ')'
+      '*Protocolo:* ' + proto,
+      '*Tutor:* ' + nome,
+      '*Pet:* ' + pet,
+      '*Espécie:* ' + d.get('especie'),
+      '*Especialidade:* ' + spec,
+      '*Horário agendado:* ' + hora + ' (' + d.get('turno') + ')'
     ];
     var url = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(lines.join('\n'));
     $('#pNum').textContent = proto;
