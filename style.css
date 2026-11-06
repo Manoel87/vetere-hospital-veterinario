@@ -249,3 +249,60 @@ legend{margin-bottom:8px;padding:0}
 @media(min-width:980px){.grid3{grid-template-columns:repeat(3,1fr)}}
 
 .section[id]{scroll-margin-top:76px}
+
+/* Protocolo de atendimento */
+.proto{text-align:center}
+.proto[hidden]{display:none}
+.proto__label{color:var(--bronze);font-size:.78rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;margin:4px 0 8px}
+.proto__num{font-family:var(--serif);font-size:3rem;line-height:1;color:var(--emerald);margin:0;letter-spacing:.06em}
+.proto__hint{color:var(--muted);font-size:.85rem;margin:6px 0 20px}
+.proto__rows{margin:0 0 22px;border:1px solid var(--bronze);background:#fff;text-align:left}
+.proto__rows div{display:flex;justify-content:space-between;gap:16px;padding:11px 16px;border-bottom:1px solid rgba(175,145,100,.35)}
+.proto__rows div:last-child{border-bottom:0}
+.proto__rows dt{color:var(--muted);font-size:.85rem}
+.proto__rows dd{margin:0;font-weight:600;text-align:right;word-break:break-word}
+.proto__close{display:block;margin:14px auto 0;background:none;border:0;color:var(--muted);cursor:pointer;font:inherit;text-decoration:underline}
+#form[hidden]{display:none}
+
+/* ================= SISTEMA DA CLÍNICA (área da equipe) ================= */
+.sys-link{color:inherit;text-decoration:underline;text-underline-offset:3px;opacity:.8}
+#sys{position:fixed;inset:0;z-index:400;overflow:auto;background:var(--mint);color:var(--text);font:400 16px/1.5 var(--sans);letter-spacing:0}
+#sys[hidden],#sys [hidden]{display:none!important}
+#sys *{box-sizing:border-box}
+#sys h2{font-family:var(--serif);font-weight:500;color:var(--emerald);margin:0 0 6px}
+#sys .sys-login{min-height:100%;display:grid;place-items:center;padding:20px;margin:0}
+#sys .sys-login form{background:#fff;padding:36px 32px;border:1px solid #d5e2dc;border-radius:10px;width:100%;max-width:380px}
+#sys .sys-login h2{font-size:1.9rem;letter-spacing:.2em}
+#sys label{display:block;font-size:.88rem;font-weight:600;margin:0 0 12px}
+#sys input,#sys select,#sys textarea{display:block;width:100%;margin-top:4px;padding:9px 10px;font:inherit;font-weight:400;color:var(--text);border:1px solid #cbd9d3;border-radius:6px;background:#fff}
+#sys textarea{min-height:80px}
+#sys :focus-visible{outline:3px solid var(--bronze);outline-offset:1px}
+#sys .sys-btn,#sys .sys-ghost,#sys td button{font:inherit;font-weight:500;cursor:pointer;border-radius:6px;padding:9px 18px;border:1px solid var(--emerald)}
+#sys .sys-btn{background:var(--emerald);color:#fff}
+#sys .sys-ghost,#sys td button{background:#fff;color:var(--emerald)}
+#sys td button{padding:4px 10px;margin-right:6px;font-size:.88rem}
+#sys td button[data-d]{color:#b3261e;border-color:#b3261e}
+#sys .sys-err{color:#b3261e;min-height:1.5em;margin:0 0 8px;font-size:.88rem}
+#sys .sys-login .sys-ghost{margin-left:8px}
+#sys .sys-top{background:var(--emerald);color:#fff;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 20px;border-bottom:1px solid var(--bronze)}
+#sys .sys-top strong{font-family:var(--serif);font-weight:500;letter-spacing:.16em}
+#sys .sys-top .sys-ghost{padding:5px 14px;margin-left:8px}
+#sysNav{display:flex;gap:4px;overflow-x:auto;background:#fff;border-bottom:1px solid #d5e2dc;padding:0 12px}
+#sysNav button{font:inherit;font-weight:500;background:none;border:0;border-bottom:3px solid transparent;padding:12px 14px;cursor:pointer;color:var(--text);white-space:nowrap}
+#sysNav button.on{border-color:var(--bronze);color:var(--emerald);font-weight:700}
+#sys .sys-wrap{max-width:1100px;margin:0 auto;padding:20px 16px 60px}
+#sysTit{font-size:1.6rem}
+#sysFm{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0 14px;background:#fff;border:1px solid #d5e2dc;border-radius:10px;padding:16px;align-items:end;margin:0}
+#sysFm .sys-btn,#sysFm .sys-ghost{margin-bottom:12px}
+#sysResumo{font-weight:700;font-size:1.1rem;margin:14px 0 0}
+#sys .sys-scroll{overflow-x:auto;margin-top:16px;background:#fff;border:1px solid #d5e2dc;border-radius:10px}
+#sysLista{width:100%;border-collapse:collapse;font-size:.95rem}
+#sysLista th,#sysLista td{padding:9px 12px;text-align:left;border-bottom:1px solid #e2ece7;vertical-align:top}
+#sysLista th{background:#eaf3ef;font-size:.85rem}
+#sysLista tr.sys-low td{background:#fdeceb}
+#sysLista td:last-child{white-space:nowrap}
+#sys .sys-top span{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+#sys .sys-tools{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+#sys .sys-tools input{flex:1;min-width:200px;width:auto;margin-top:0}
+#sys .sys-tools+.sys-scroll{margin-top:12px}
+#sys button:disabled{opacity:.6;cursor:wait}

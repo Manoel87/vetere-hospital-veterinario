@@ -239,7 +239,7 @@
         src="https://www.google.com/maps?q=R.%20Amamba%C3%AD%2C%20256%20-%20Candeias%2C%20Jaboat%C3%A3o%20dos%20Guararapes%20-%20PE%2C%2054430-160&output=embed"></iframe>
     </div>
   </div>
-  <p class="copy">© <span id="year"></span> VETÈRE Hospital Veterinário. Todos os direitos reservados.</p>
+  <p class="copy">© <span id="year"></span> VETÈRE Hospital Veterinário. Todos os direitos reservados. · <a href="#sistema" class="sys-link" data-sys-open>Área da equipe</a></p>
 </footer>
 
 <a class="wa-float" id="waFloat" href="#" target="_blank" rel="noopener" aria-label="WhatsApp Emergencial">
@@ -280,18 +280,54 @@
           <label><input type="radio" name="turno" value="Noite"><span>Noite</span></label>
         </div>
       </fieldset>
+      <label class="field">Horário desejado
+        <input type="time" name="horario" id="fHora" required>
+      </label>
       <label class="field">Seu nome
         <input type="text" name="nome" id="fNome" placeholder="Nome do tutor" autocomplete="name" required>
       </label>
       <label class="field">Nome do pet (opcional)
         <input type="text" name="pet" placeholder="Nome do seu pet">
       </label>
-      <p class="err" id="err" hidden>Informe seu nome para continuar.</p>
+      <p class="err" id="err" hidden>Informe seu nome e o horário para continuar.</p>
       <button type="submit" class="btn btn--gold btn--block">Enviar pelo WhatsApp</button>
     </form>
+    <div class="proto" id="protocol" hidden>
+      <p class="proto__label">Agendamento registrado</p>
+      <p class="proto__num" id="pNum">000000</p>
+      <p class="proto__hint">Protocolo de atendimento</p>
+      <dl class="proto__rows">
+        <div><dt>Tutor</dt><dd id="pTutor"></dd></div>
+        <div><dt>Pet</dt><dd id="pPet"></dd></div>
+        <div><dt>Horário agendado</dt><dd id="pHora"></dd></div>
+        <div><dt>Especialidade</dt><dd id="pSpec"></dd></div>
+      </dl>
+      <a class="btn btn--gold btn--block" id="pWa" href="#" target="_blank" rel="noopener">Enviar pelo WhatsApp</a>
+      <button type="button" class="proto__close" id="pClose">Fechar</button>
+    </div>
   </div>
 </div>
 
+<!-- SISTEMA DA CLÍNICA (área da equipe) -->
+<div id="sys" role="dialog" aria-modal="true" aria-label="Sistema da clínica" hidden>
+  <main id="sysLoginBox" class="sys-login">
+    <form id="sysLogin">
+      <h2>VETÈRE</h2>
+      <p>Área da equipe. Entre com seu e-mail e senha.</p>
+      <label>E-mail<input id="sysEmail" type="email" required autocomplete="username"></label>
+      <label>Senha<input id="sysSenha" type="password" required autocomplete="current-password"></label>
+      <p id="sysLerr" class="sys-err"></p>
+      <button class="sys-btn">Entrar</button><button type="button" class="sys-ghost" data-sys-close>Voltar ao site</button>
+    </form>
+  </main>
+  <div id="sysApp" hidden>
+    <header class="sys-top"><strong>VETÈRE · Sistema</strong><span><button type="button" class="sys-ghost" data-sys-close>Voltar ao site</button><button type="button" id="sysBackup" class="sys-ghost">Baixar backup (CSV)</button><button type="button" id="sysSair" class="sys-ghost">Sair</button></span></header>
+    <nav id="sysNav" aria-label="Módulos"></nav>
+    <main class="sys-wrap"><h2 id="sysTit"></h2><form id="sysFm"></form><p id="sysResumo"></p><div class="sys-tools"><input id="sysBusca" type="search" placeholder="Buscar por nome…" aria-label="Buscar na lista"><button type="button" id="sysCsv" class="sys-ghost">Baixar esta lista (CSV)</button></div><div class="sys-scroll"><table id="sysLista"></table></div></main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

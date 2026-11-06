@@ -81,7 +81,8 @@
 
   /* Modal de agendamento */
   var modal = $('#modal'), form = $('#form'), lastFocus = null;
-  function openModal(spec, urgent) {
+  var openModal;
+  openModal = function (spec, urgent) {
     lastFocus = document.activeElement;
     if (spec) {
       var sel = $('#fSpec');
@@ -91,7 +92,7 @@
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(function () { modal.classList.add('is-open'); });
     setTimeout(function () { $('#fNome').focus(); }, 150);
-  }
+  };
   function closeModal() {
     modal.classList.remove('is-open');
     document.body.style.overflow = '';
@@ -116,24 +117,252 @@
     }
   });
 
+  /* Protocolo: DDMM + sequência do dia (ex.: 051101, 051102...) */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function nextProtocol() {
+    var now = new Date(), ddmm = pad2(now.getDate()) + pad2(now.getMonth() + 1), key = 'vetere_proto', n = 1;
+    try {
+      var saved = JSON.parse(localStorage.getItem(key) || 'null');
+      var day = now.getFullYear() + '-' + ddmm;
+      if (saved && saved.day === day) n = saved.n + 1;
+      localStorage.setItem(key, JSON.stringify({ day: day, n: n }));
+    } catch (err) {
+      n = Math.floor((now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds()) / 15) % 99 + 1;
+    }
+    return ddmm + pad2(n);
+  }
+
+  var protoBox = $('#protocol');
+  function showForm() { protoBox.hidden = true; form.hidden = false; $('.modal__sub').hidden = false; }
+  var _open = openModal;
+  openModal = function (spec, urgent) { showForm(); _open(spec, urgent); };
+  $('#pClose').addEventListener('click', closeModal);
+
   form.addEventListener('submit', function (e) {
     e.preventDefault();
-    var d = new FormData(form), nome = (d.get('nome') || '').trim(), err = $('#err');
-    if (!nome) { err.hidden = false; $('#fNome').focus(); return; }
+    var d = new FormData(form), nome = (d.get('nome') || '').trim(), hora = d.get('horario') || '', err = $('#err');
+    if (!nome || !hora) { err.hidden = false; (!nome ? $('#fNome') : $('#fHora')).focus(); return; }
     err.hidden = true;
-    var spec = d.get('especialidade'), urgent = /URGÊNCIA/i.test(spec);
+    var spec = d.get('especialidade'), urgent = /URGÊNCIA/i.test(spec),
+        pet = (d.get('pet') || '').trim() || 'não informado',
+        proto = nextProtocol();
     var lines = [
       (urgent ? '🚨 *URGÊNCIA* – ' : '') + '*Solicitação de agendamento – VETÈRE*',
       '',
+      '🔖 Protocolo: *' + proto + '*',
       '👤 Tutor: ' + nome,
-      '🐾 Pet: ' + ((d.get('pet') || '').trim() || 'não informado'),
+      '🐾 Pet: ' + pet,
       '🐶🐱 Espécie: ' + d.get('especie'),
       '🩺 Especialidade: ' + spec,
-      '🕐 Turno desejado: ' + d.get('turno')
+      '🕐 Horário agendado: ' + hora + ' (' + d.get('turno') + ')'
     ];
     var url = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(lines.join('\n'));
-    window.open(url, '_blank', 'noopener');
-    closeModal();
+    $('#pNum').textContent = proto;
+    $('#pTutor').textContent = nome;
+    $('#pPet').textContent = pet;
+    $('#pHora').textContent = hora;
+    $('#pSpec').textContent = spec;
+    $('#pWa').href = url;
+    form.hidden = true; $('.modal__sub').hidden = true;
+    protoBox.hidden = false;
     form.reset();
+    $('#pWa').focus();
+  });
+})();
+
+/* ================= SISTEMA DA CLÍNICA (área da equipe) ================= */
+(function () {
+  'use strict';
+  if (typeof supabase === 'undefined' || !document.getElementById('sys')) return;
+
+  /* ====== CONFIGURAÇÃO: cole aqui os dois dados do Supabase (Project Settings > API) ====== */
+  var SUPABASE_URL = 'https://qqkmzgiydslotoczonqk.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_jCu3JlfAH0JSOTtfHVZGVA_PSJRTz9f';
+  /* ======================================================================================= */
+
+  var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var $ = function (s) { return document.querySelector(s); };
+
+  /* Cada módulo: título, tabela, ordenação e campos [coluna, rótulo, tipo, obrigatório] */
+  var M = {
+    tutores: { t: 'Tutores', f: [['nome', 'Nome', 'text', 1], ['telefone', 'Telefone', 'tel'], ['email', 'E-mail', 'email']] },
+    pets: { t: 'Pets', f: [['tutor_id', 'Tutor', 'ref:tutores:nome', 1], ['nome', 'Nome do pet', 'text', 1], ['especie', 'Espécie', 'sel:Cão,Gato,Outro'], ['raca', 'Raça', 'text'], ['nascimento', 'Nascimento', 'date']] },
+    consultas: { t: 'Agenda', o: 'data_hora', asc: true, f: [['pet_id', 'Pet', 'ref:pets:nome', 1], ['data_hora', 'Data e hora', 'datetime-local', 1], ['motivo', 'Motivo', 'text'], ['status', 'Status', 'sel:agendada,realizada,cancelada']] },
+    prontuarios: { t: 'Prontuário', o: 'data', f: [['pet_id', 'Pet', 'ref:pets:nome', 1], ['data', 'Data', 'date', 1], ['descricao', 'Atendimento', 'textarea', 1], ['medicamentos', 'Medicamentos', 'text']] },
+    financeiro: { t: 'Financeiro', o: 'data', f: [['descricao', 'Descrição', 'text', 1], ['valor', 'Valor (R$)', 'number', 1], ['tipo', 'Tipo', 'sel:receita,despesa'], ['data', 'Data', 'date']] },
+    estoque: { t: 'Estoque', o: 'item', asc: true, f: [['item', 'Item', 'text', 1], ['quantidade', 'Quantidade', 'number', 1], ['minimo', 'Mínimo', 'number'], ['unidade', 'Unidade', 'text']] }
+  };
+  var cur = 'tutores', rows = [], refs = {}, editId = null;
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function isRef(f) { return f[2].indexOf('ref:') === 0; }
+  function refCol(f) { return f[2].split(':')[2]; }
+
+  /* Login */
+  $('#sysLogin').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var r = await db.auth.signInWithPassword({ email: $('#sysEmail').value.trim(), password: $('#sysSenha').value });
+    if (r.error) { $('#sysLerr').textContent = 'E-mail ou senha incorretos.'; return; }
+    start();
+  });
+  $('#sysSair').addEventListener('click', async function () { await db.auth.signOut(); history.replaceState(null, '', location.pathname + location.search); location.reload(); });
+  /* Abrir e fechar a área da equipe (link no rodapé ou endereço terminando em #sistema) */
+  var sys = $('#sys'), booted = false;
+  function openSys() {
+    sys.hidden = false; document.body.style.overflow = 'hidden';
+    if (!booted) { booted = true; db.auth.getSession().then(function (r) { if (r.data.session) start(); }); }
+  }
+  function closeSys() {
+    sys.hidden = true; document.body.style.overflow = '';
+    if (location.hash === '#sistema') history.replaceState(null, '', location.pathname + location.search);
+  }
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('[data-sys-open]')) { e.preventDefault(); openSys(); }
+    else if (e.target.closest('[data-sys-close]')) closeSys();
+  });
+  if (location.hash === '#sistema') openSys();
+
+  function start() {
+    $('#sysLoginBox').hidden = true; $('#sysApp').hidden = false;
+    $('#sysNav').innerHTML = Object.keys(M).map(function (k) { return '<button data-k="' + k + '">' + M[k].t + '</button>'; }).join('');
+    go('tutores');
+  }
+  $('#sysNav').addEventListener('click', function (e) { if (e.target.dataset.k) go(e.target.dataset.k); });
+
+  async function go(k) {
+    cur = k; editId = null; refs = {}; $('#sysBusca').value = '';
+    $('#sysTit').textContent = M[k].t;
+    document.querySelectorAll('#sysNav button').forEach(function (b) { b.classList.toggle('on', b.dataset.k === k); });
+    for (var f of M[k].f) {
+      if (isRef(f)) {
+        var src = f[2].split(':')[1];
+        var r = await db.from(src).select('id,' + refCol(f)).order(refCol(f));
+        refs[f[0]] = r.data || [];
+      }
+    }
+    form(); load();
+  }
+
+  function form() {
+    $('#sysFm').innerHTML = M[cur].f.map(function (f) {
+      var t = f[2], id = 'sf_' + f[0], req = f[3] ? ' required' : '', h;
+      if (isRef(f)) h = '<select id="' + id + '"' + req + '><option value="">Selecione…</option>' + refs[f[0]].map(function (o) { return '<option value="' + o.id + '">' + esc(o[refCol(f)]) + '</option>'; }).join('') + '</select>';
+      else if (t.indexOf('sel:') === 0) h = '<select id="' + id + '">' + t.slice(4).split(',').map(function (o) { return '<option>' + o + '</option>'; }).join('') + '</select>';
+      else if (t === 'textarea') h = '<textarea id="' + id + '"' + req + '></textarea>';
+      else h = '<input id="' + id + '" type="' + t + '"' + (t === 'number' ? ' step="0.01"' : '') + req + '>';
+      return '<label>' + f[1] + h + '</label>';
+    }).join('') + '<button class="sys-btn">Salvar</button><button type="button" class="sys-ghost" id="sysCancel" hidden>Cancelar edição</button>';
+    $('#sysCancel').onclick = function () { editId = null; form(); };
+  }
+
+  async function load() {
+    var m = M[cur];
+    var r = await db.from(cur).select('*').order(m.o || 'criado_em', { ascending: !!m.asc });
+    if (r.error) { alert('Erro ao carregar: ' + r.error.message); return; }
+    rows = r.data || [];
+    $('#sysLista').innerHTML = '<tr>' + m.f.map(function (f) { return '<th>' + f[1] + '</th>'; }).join('') + '<th></th></tr>' +
+      (rows.length ? rows.map(function (x, i) {
+        var low = cur === 'estoque' && x.quantidade <= x.minimo ? ' class="sys-low"' : '';
+        return '<tr' + low + '>' + m.f.map(function (f) {
+          var v = x[f[0]];
+          if (isRef(f)) { var o = refs[f[0]].find(function (o) { return o.id === v; }); v = o ? o[refCol(f)] : ''; }
+          else if (f[2] === 'datetime-local' && v) v = new Date(v).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+          else if (f[2] === 'date' && v) v = v.split('-').reverse().join('/');
+          return '<td>' + esc(v) + '</td>';
+        }).join('') + '<td><button data-e="' + i + '">Editar</button><button data-d="' + x.id + '">Excluir</button></td></tr>';
+      }).join('') : '<tr><td colspan="9">Nada cadastrado ainda. Preencha o formulário acima e clique em Salvar.</td></tr>');
+    var s = 0, n = 0;
+    if (cur === 'financeiro') {
+      rows.forEach(function (x) { s += (x.tipo === 'receita' ? 1 : -1) * Number(x.valor); });
+      $('#sysResumo').textContent = 'Saldo: R$ ' + s.toFixed(2).replace('.', ',');
+    } else if (cur === 'estoque') {
+      rows.forEach(function (x) { if (x.quantidade <= x.minimo) n++; });
+      $('#sysResumo').textContent = n ? n + ' item(ns) no estoque mínimo ou abaixo (em vermelho).' : '';
+    } else $('#sysResumo').textContent = '';
+    filtra();
+  }
+
+  /* Busca por nome: filtra as linhas da lista (ignora acentos e maiúsculas) */
+  function norm(s) { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
+  function filtra() {
+    var q = norm($('#sysBusca').value.trim()), trs = document.querySelectorAll('#sysLista tr');
+    for (var i = 1; i < trs.length; i++) {
+      var t = '';
+      for (var c = 0; c < trs[i].cells.length - 1; c++) t += ' ' + trs[i].cells[c].textContent;
+      trs[i].hidden = !!q && norm(t).indexOf(q) === -1;
+    }
+  }
+  $('#sysBusca').addEventListener('input', filtra);
+
+  /* Backup em CSV (separador ; e acentos corretos no Excel em português) */
+  async function fetchAll(t) {
+    var out = [], from = 0, r;
+    do {
+      r = await db.from(t).select('*').order('criado_em').range(from, from + 999);
+      if (r.error) throw r.error;
+      out = out.concat(r.data); from += 1000;
+    } while (r.data.length === 1000);
+    return out;
+  }
+  function csvCell(v) {
+    if (v == null) return '';
+    var s = String(v);
+    if (/^[=@]/.test(s)) s = "'" + s;
+    return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  }
+  async function baixa(t) {
+    var cols = ['id'].concat(M[t].f.map(function (f) { return f[0]; }), 'criado_em');
+    var data = await fetchAll(t);
+    var linhas = [cols.join(';')].concat(data.map(function (x) { return cols.map(function (c) { return csvCell(x[c]); }).join(';'); }));
+    var blob = new Blob(['\ufeff' + linhas.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'vetere-' + t + '-' + new Date().toLocaleDateString('sv-SE') + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  $('#sysCsv').addEventListener('click', async function () {
+    try { await baixa(cur); } catch (err) { alert('Erro ao baixar: ' + (err.message || err)); }
+  });
+  $('#sysBackup').addEventListener('click', async function (e) {
+    var b = e.currentTarget, txt = b.textContent;
+    b.disabled = true; b.textContent = 'Gerando…';
+    try {
+      for (var k of Object.keys(M)) { await baixa(k); await new Promise(function (ok) { setTimeout(ok, 500); }); }
+    } catch (err) { alert('Erro ao gerar o backup: ' + (err.message || err)); }
+    b.disabled = false; b.textContent = txt;
+  });
+
+  /* Salvar (novo ou edição) */
+  $('#sysFm').addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var o = {};
+    M[cur].f.forEach(function (f) {
+      var v = $('#sf_' + f[0]).value;
+      if (f[2] === 'datetime-local' && v) v = new Date(v).toISOString();
+      o[f[0]] = v === '' ? null : v;
+    });
+    var r = await (editId ? db.from(cur).update(o).eq('id', editId) : db.from(cur).insert(o));
+    if (r.error) { alert('Erro ao salvar: ' + r.error.message); return; }
+    editId = null; form(); load();
+  });
+
+  /* Editar e excluir */
+  $('#sysLista').addEventListener('click', async function (e) {
+    var b = e.target;
+    if (b.dataset.e !== undefined) {
+      var x = rows[b.dataset.e]; editId = x.id;
+      M[cur].f.forEach(function (f) {
+        var v = x[f[0]];
+        if (f[2] === 'datetime-local' && v) { var d = new Date(v); v = new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); }
+        $('#sf_' + f[0]).value = v == null ? '' : v;
+      });
+      $('#sysCancel').hidden = false; $('#sys').scrollTop = 0;
+    }
+    if (b.dataset.d && confirm('Excluir este registro? Não dá para desfazer. Excluir um tutor também exclui os pets dele.')) {
+      var r = await db.from(cur).delete().eq('id', b.dataset.d);
+      if (r.error) alert('Erro ao excluir: ' + r.error.message);
+      load();
+    }
   });
 })();
